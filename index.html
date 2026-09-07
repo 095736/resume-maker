@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>简历制作工具</title>
+<style>
+:root{
+  --blue:#2f6fed; --blue-l:#e8effd; --bg:#f5f6f8; --card:#fff;
+  --line:#e6e8ec; --text:#1f2329; --muted:#8a919c; --danger:#e5484d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea{
+  font-family:inherit;font-size:13px;color:var(--text);background:#fff;
+  border:1px solid var(--line);border-radius:6px;padding:7px 10px;outline:none;width:100%;
+}
+input:focus,textarea:focus{border-color:var(--blue)}
+textarea{resize:vertical;min-height:56px;line-height:1.6}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:#cdd2d9;border-radius:10px}
+
+/* ===== 顶栏 ===== */
+.topbar{
+  height:56px;display:flex;align-items:center;gap:10px;padding:0 20px;
+  background:#fff;border-bottom:1px solid var(--line);position:relative;z-index:40;
+}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:16px;margin-right:8px}
+.logo .mark{width:30px;height:30px;border-radius:8px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px}
+.spacer{flex:1}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:8px;
+  background:#fff;border:1px solid var(--line);font-size:13px;transition:.15s;font-weight:500;
+}
+.btn:hover{border-color:var(--blue);color:var(--blue)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+.btn.primary:hover{background:#245fd6;color:#fff}
+.btn.ghost{color:var(--blue);border-color:var(--blue)}
+.btn.ghost:hover{background:var(--blue-l)}
+
+/* 简历下拉菜单 */
+.resume-switch{position:relative}
+.resume-menu{
+  position:absolute;top:44px;left:0;min-width:220px;background:#fff;border:1px solid var(--line);
+  border-radius:10px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.12);z-index:60;display:none;max-height:320px;overflow:auto;
+}
+.resume-menu.open{display:block}
+.resume-menu .r-item{display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:7px;cursor:pointer;font-size:13px}
+.resume-menu .r-item:hover{background:var(--blue-l)}
+.resume-menu .r-item.active{background:var(--blue-l);color:var(--blue);font-weight:600}
+.resume-menu .r-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.resume-menu .r-edit{margin-left:auto;color:#bbb;padding:2px 6px;border-radius:6px;flex-shrink:0;font-size:13px}
+.resume-menu .r-edit:hover{color:var(--blue);background:var(--blue-l)}
+.resume-menu .r-del{color:#bbb;padding:2px 7px;border-radius:6px;flex-shrink:0}
+.resume-menu .r-del:hover{color:var(--danger);background:#fdeaea}
+.resume-menu .r-rename-input{flex:1;min-width:0;border:1.5px solid var(--blue);border-radius:6px;padding:3px 7px;font-size:13px;outline:none}
+.resume-menu .r-divider{height:1px;background:var(--line);margin:6px 8px}
+
+/* ===== 主体 ===== */
+.main{display:flex;height:calc(100vh - 56px)}
+.editor{
+  width:440px;min-width:440px;overflow-y:auto;padding:18px 16px 60px;
+  background:var(--bg);border-right:1px solid var(--line);
+}
+.preview{
+  flex:1;overflow:auto;padding:36px 30px;display:flex;justify-content:center;align-items:flex-start;background:#eceff3;
+}
+.add-module{
+  width:100%;padding:12px;border:1.5px dashed #c4cbD4;border-radius:10px;color:var(--muted);
+  font-size:13px;transition:.15s;margin-top:4px;
+}
+.add-module:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}
+
+/* ===== 模块卡片 ===== */
+.module-card{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:visible;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.module-card.dragging{opacity:.45}
+.module-head{display:flex;align-items:center;gap:8px;padding:11px 12px;border-bottom:1px solid var(--line)}
+.module-head .grip{cursor:grab;color:#c0c6cf;font-size:14px;padding:2px}
+.module-head .grip:hover{color:var(--blue)}
+.module-head .m-title{font-weight:600;font-size:14px;border:none;padding:4px 6px;flex:1}
+.module-head .m-title:focus{background:var(--blue-l);border-radius:6px}
+.module-head .fold{color:#555;font-size:15px;padding:2px 9px;cursor:pointer;flex-shrink:0;border-radius:6px;line-height:1}
+.module-head .fold:hover{background:var(--blue-l);color:var(--blue)}
+.module-head .del{color:#c0c6cf;font-size:16px;padding:4px 8px;border-radius:6px}
+.module-head .del:hover{color:var(--danger);background:#fdeaea}
+.module-body{padding:12px 14px}
+
+/* 条目 */
+.entry{border:1px solid var(--line);border-radius:10px;padding:11px;margin:9px 0;background:#fafbfc;position:relative}
+.entry .e-head{display:flex;align-items:center;margin-bottom:6px}
+.entry .e-head .e-idx{font-size:11px;color:var(--muted);font-weight:700;margin-right:6px}
+.entry .e-head .e-switch{display:flex;align-items:center;gap:6px;margin-left:auto;font-size:12px;color:var(--muted)}
+.entry .e-head .e-del{color:#c0c6cf;font-size:15px;padding:2px 7px;border-radius:6px;margin-left:8px}
+.entry .e-head .e-del:hover{color:var(--danger);background:#fdeaea}
+.switch{position:relative;width:34px;height:19px;background:#d0d4da;border-radius:20px;transition:.2s;flex-shrink:0}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.switch.on{background:var(--blue)}
+.switch.on::after{left:17px}
+.row2{display:flex;gap:8px}
+.row2>div{flex:1}
+.row3{display:flex;gap:8px}
+.row3>div{flex:1}
+.f-label{font-size:12px;color:var(--muted);margin:8px 0 4px;display:block}
+.font-row{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.font-row .f-label{margin:0;flex-shrink:0}
+.font-row select{flex:1;height:34px;border:1px solid var(--line);border-radius:8px;padding:0 8px;font-size:13px;background:#fff;color:var(--text);outline:none}
+.font-row select:focus{border-color:var(--blue)}
+.kv-row{display:flex;gap:8px;align-items:center;margin:6px 0}
+.kv-row .kv-label{width:90px;flex-shrink:0}
+.kv-row .kv-del{color:#c0c6cf;font-size:15px;padding:4px 7px;border-radius:6px;flex-shrink:0}
+.kv-row .kv-del:hover{color:var(--danger);background:#fdeaea}
+.add-entry{width:100%;padding:9px;border:1.5px dashed #c4cbD4;border-radius:8px;color:var(--muted);font-size:12.5px;transition:.15s}
+.add-entry:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}
+
+/* 富文本 */
+.rte{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.rte-toolbar{display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid var(--line);background:#fafbfc}
+.rte-toolbar .b{width:26px;height:24px;border-radius:5px;font-weight:800;font-family:Georgia,serif;font-size:13px;display:flex;align-items:center;justify-content:center}
+.rte-toolbar .b:hover{background:var(--blue-l);color:var(--blue)}
+.rte-toolbar select{height:24px;border:1px solid var(--line);border-radius:5px;font-size:12px;padding:0 4px;background:#fff;color:var(--text);outline:none}
+.rte-body{min-height:70px;padding:10px 12px;outline:none;line-height:1.7;font-size:13px}
+.rte-body:empty::before{content:"在此输入内容…";color:#c0c6cf}
+
+/* ===== 预览（仿 1.2 PDF：窄长 + 蓝色章节条） ===== */
+.paper-wrap{position:relative;filter:drop-shadow(0 14px 40px rgba(0,0,0,.18))}
+.page-break-overlay{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:5;overflow:hidden}
+.page-break-overlay .pb-line{position:absolute;left:0;right:0;height:0;border-top:1.5px dashed #f43f5e}
+.paper{
+  width:615pt;min-height:0;background:#fff;color:#000;padding-bottom:18pt;
+  font-family:"AlibabaPuHuiTi","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:10.5pt;line-height:15pt;
+  --pc:#3978a3;--sc:#b4c7dc;
+}
+.paper.theme-blue{--pc:#3978a3;--sc:#b4c7dc}
+.paper .p-title{font-size:18.8pt;font-weight:700;text-align:center;color:var(--pc);line-height:1.3;padding:16pt 0 20pt}
+.paper .p-module{margin-bottom:14pt}
+.paper .p-module:last-child{margin-bottom:0}
+.paper .p-module-title{
+  height:15pt;line-height:15pt;font-size:11.2pt;font-weight:700;color:#fff;
+  background:linear-gradient(to right, var(--pc) 0, var(--pc) 92pt, var(--sc) 92pt, var(--sc) 100%);
+  padding-left:15pt;margin:0 15pt 8pt;
+}
+.paper .p-body{margin:0 22.5pt}
+.paper .p-basic{display:grid;grid-template-columns:1fr 1fr;column-gap:20pt;row-gap:6pt}
+.paper .p-basic-wrap{display:flex;gap:18pt;align-items:flex-start}
+.paper .p-basic-wrap .p-basic{flex:1}
+.paper .p-photo{width:66pt;height:80pt;background:#f0f0f0;border:1px solid #ddd;border-radius:4pt;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:9pt;overflow:hidden}
+.paper .p-photo img{width:100%;height:100%;object-fit:cover}
+.paper .p-item{margin-bottom:13pt}
+.paper .p-line1{display:flex;justify-content:space-between;align-items:baseline;gap:14pt}
+.paper .p-line1 .t{font-weight:700}
+.paper .p-line1 .r{white-space:nowrap}
+.paper .p-line1 .time{white-space:nowrap}
+.paper .p-edu-line{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:baseline}
+.paper .p-edu-line .time{justify-self:start}
+.paper .p-edu-line .t{justify-self:center;font-weight:700}
+.paper .p-edu-line .m{justify-self:end;white-space:nowrap}
+.paper .p-proj-line{display:grid;grid-template-columns:100pt 1fr auto;align-items:baseline;column-gap:12pt}
+.paper .p-proj-line .time{justify-self:start;white-space:nowrap}
+.paper .p-proj-line .t{justify-self:center;font-weight:700}
+.paper .p-proj-line .r{justify-self:end;white-space:nowrap}
+.paper .p-courses{margin-top:2pt;text-align:justify}
+.paper .p-detail{margin-top:5pt;text-align:justify}
+.paper .p-edu-line + .p-courses{margin-top:10pt}
+.paper .p-courses + .p-detail{margin-top:3pt}
+.paper .p-edu-line + .p-detail{margin-top:10pt}
+.paper .p-proj-line + .p-detail{margin-top:10pt}
+.paper .p-empty{color:#bbb;text-align:center;padding:30pt}
+
+/* toast 提示 */
+#toast{
+  position:fixed;top:70px;left:50%;transform:translateX(-50%);
+  background:#1f2329;color:#fff;padding:9px 20px;border-radius:8px;font-size:13px;
+  display:none;z-index:200;box-shadow:0 6px 20px rgba(0,0,0,.25);pointer-events:none;
+}
+
+/* 全局格式工具栏 */
+#fmtBar{
+  position:fixed;z-index:300;display:none;align-items:center;gap:4px;padding:5px 8px;
+  background:#1f2329;border:1px solid #333;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.3);
+}
+#fmtBar.show{display:flex}
+#fmtBar button{min-width:28px;height:26px;border-radius:6px;font-size:13px;color:#eee;display:flex;align-items:center;justify-content:center;padding:0 7px;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+#fmtBar button:hover{background:rgba(255,255,255,.15)}
+#fmtBar button.b{font-weight:800;font-family:Georgia,serif}
+#fmtBar button.indent{background:var(--blue);color:#fff;font-weight:600;padding:0 11px}
+#fmtBar button.indent:hover{background:#245fd6;color:#fff}
+#fmtBar select{height:26px;border-radius:6px;background:#2a2a2a;border:1px solid #444;color:#eee;font-size:12px;padding:0 4px;outline:none}
+#fmtBar .sep{width:1px;height:18px;background:#444;margin:0 3px}
+
+/* 打印 */
+@media print{
+  body{overflow:visible;background:#fff}
+  .topbar,.editor,.add-module,.mobile-tab{display:none!important}
+  .main{display:block;height:auto}
+  .preview{display:block;padding:0;background:#fff;overflow:visible}
+  .paper-wrap{zoom:1!important;position:static;filter:none}
+  .paper{width:615pt;min-height:0;margin:0}
+  @page{size:615pt 1494pt;margin:0}
+}
+
+/* 移动端 */
+.mobile-tab{display:none}
+@media (max-width:920px){
+  .editor{position:absolute;left:0;top:56px;bottom:0;width:100%;min-width:0;z-index:20;transform:translateX(-100%);transition:.25s}
+  .editor.show{transform:translateX(0)}
+  .preview{padding:20px;justify-content:flex-start}
+  .mobile-tab{display:flex;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid var(--line);border-radius:30px;padding:4px;z-index:50;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+  .mobile-tab button{padding:9px 22px;border-radius:26px;font-size:13px;font-weight:600}
+  .mobile-tab button.active{background:var(--blue);color:#fff}
+}
+</style>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><div class="mark">📄</div><span>简历制作工具</span></div>
+  <div class="resume-switch">
+    <button class="btn" onclick="toggleResumeMenu()">📂 简历 <span style="opacity:.6">▾</span></button>
+    <div class="resume-menu" id="resumeMenu"></div>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn" onclick="saveResume()">💾 保存</button>
+  <button class="btn" onclick="exportTxt()">导出纯文本</button>
+  <button class="btn" onclick="exportPDF()" title="整页导出，高度随内容自适应">导出 PDF</button>
+  <button class="btn primary" onclick="exportPDFPages()" title="按 A4 纸张分页导出">分页导出</button>
+</div>
+
+<div id="toast"></div>
+
+<div id="fmtBar">
+  <button class="b" onmousedown="event.preventDefault()" onclick="fmtBold()" title="加粗">B</button>
+  <button class="indent" onmousedown="event.preventDefault()" onclick="fmtIndent()" title="首行缩进（再点取消）">缩进</button>
+  <select onmousedown="saveFmtSel()" onchange="fmtSize(this.value,this)">
+    <option value="">字号</option>
+    <option value="12">12</option><option value="14">14</option><option value="16">16</option>
+    <option value="18">18</option><option value="20">20</option><option value="24">24</option><option value="28">28</option>
+  </select>
+</div>
+
+<div class="main">
+  <div class="editor" id="editor">
+    <button class="btn" style="width:100%;margin-bottom:14px" onclick="document.getElementById('photoInput').click()">📷 上传证件照</button>
+    <div class="font-row">
+      <span class="f-label">简历字体</span>
+      <select id="fontSelect" onchange="setFont(this.value)">
+        <option value="yahei">微软雅黑</option>
+        <option value="pingfang">苹方</option>
+        <option value="song">宋体</option>
+        <option value="hei">黑体</option>
+        <option value="kai">楷体</option>
+        <option value="fangsong">仿宋</option>
+        <option value="alibaba">阿里巴巴普惠体</option>
+      </select>
+    </div>
+    <div id="moduleList"></div>
+    <button class="add-module" onclick="addModule()">＋ 添加主题模块</button>
+  </div>
+  <div class="preview" id="preview">
+    <div class="paper-wrap"><div class="paper" id="paper" contenteditable="true" spellcheck="false"></div><div class="page-break-overlay" id="pageBreakOverlay"></div></div>
+  </div>
+</div>
+
+<div class="mobile-tab">
+  <button id="tabEdit" class="active" onclick="mobileTab('edit')">编辑</button>
+  <button id="tabPreview" onclick="mobileTab('preview')">预览</button>
+</div>
+
+<input type="file" id="photoInput" accept="image/*" style="display:none">
+
+<script>
+const STORE_KEY = 'resume_builder_v6';
+let uid = 0;
+function nid(){ return 'id' + (++uid) + '_' + Date.now().toString(36); }
+const FONTS = [
+  { id:'yahei', name:'微软雅黑', css:'"Microsoft YaHei","PingFang SC","Helvetica Neue",sans-serif' },
+  { id:'pingfang', name:'苹方', css:'-apple-system,"PingFang SC","Microsoft YaHei",sans-serif' },
+  { id:'song', name:'宋体', css:'SimSun,STSong,serif' },
+  { id:'hei', name:'黑体', css:'SimHei,STHeiti,"Microsoft YaHei",sans-serif' },
+  { id:'kai', name:'楷体', css:'KaiTi,STKaiti,serif' },
+  { id:'fangsong', name:'仿宋', css:'FangSong,STFangsong,serif' },
+  { id:'alibaba', name:'阿里巴巴普惠体', css:'"AlibabaPuHuiTi","PingFang SC",sans-serif' },
+];
+function setFont(id){
+  resume.font = id;
+  save();
+  applyFont();
+}
+function applyFont(){
+  const paper = document.getElementById('paper');
+  if(!paper) return;
+  const f = FONTS.find(x => x.id === resume.font) || FONTS[0];
+  paper.style.fontFamily = f.css;
+  const sel = document.getElementById('fontSelect');
+  if(sel) sel.value = f.id;
+}
+
+const MODULE_TYPES = {
+  basic:     { title:'基本信息', defItem:()=>({id:nid(),label:'',value:''}) },
+  education: { title:'教育背景', defItem:()=>({id:nid(),time:'',school:'',major:'',courses:'',detail:''}) },
+  skills:    { title:'专业技能', defItem:()=>({id:nid(),content:''}) },
+  projects:  { title:'项目经历', defItem:()=>({id:nid(),time:'',name:'',role:'',detail:''}) },
+  work:      { title:'工作经历', defItem:()=>({id:nid(),time:'',company:'',position:'',detail:'',visible:true}) },
+  hobby:     { title:'兴趣爱好', defItem:()=>({id:nid(),content:''}) },
+  custom:    { title:'自定义模块', defItem:()=>({id:nid(),content:''}) },
+};
+
+function defaultResume(){
+  return {
+    name:'星野未来的简历',
+    font:'yahei',
+    photo:'',
+    modules:[
+      { id:nid(), type:'basic', title:'基本信息', items:[
+        {id:nid(),label:'姓名',value:'星野 未来'},
+        {id:nid(),label:'英文名',value:'Mirai Hoshino'},
+        {id:nid(),label:'年龄',value:'20'},
+        {id:nid(),label:'性别',value:'女'},
+        {id:nid(),label:'学历',value:'本科'},
+        {id:nid(),label:'电话',value:'138-0000-0000'},
+        {id:nid(),label:'邮箱',value:'mirai.hoshino@example.com'},
+        {id:nid(),label:'求职意向',value:'嵌入式系统工程师'},
+      ]},
+      { id:nid(), type:'education', title:'教育背景', items:[
+        {id:nid(),time:'2022-09 ~ 2026-06',school:'天启理工学院',major:'电气工程及其自动化',courses:'C语言程序设计，单片机原理及应用，自动控制原理，电路原理，数字电子技术，大学物理(A)等',detail:'担任学院机器人创新社社长\n获得全国大学生机器人大赛 RoboCup 中国赛一等奖\n获得蓝桥杯电子设计竞赛省级一等奖\n英语(CET-6)、计算机二级(C语言)'},
+      ]},
+      { id:nid(), type:'skills', title:'专业技能', items:[
+        {id:nid(),content:'熟练掌握 C 语言，熟悉指针与内存管理，能运用链表、环形缓冲区等常用数据结构。\n熟悉 STM32、ESP32 系列单片机开发，掌握 GPIO、USART、I2C、SPI、ADC、DMA、TIM 等常用外设。\n掌握永磁同步电机（PMSM）矢量控制与 FOC 磁场定向控制，熟悉电流-速度-位置三闭环 PID 调参。\n熟悉 Altium Designer 进行 PCB 设计与电路调试，熟练使用示波器、万用表排查硬件故障。\n熟悉 Matlab/Simulink 仿真环境，可进行电机控制系统的建模与数据分析。\n熟悉 Git 团队协同开发，掌握分支管理、代码合并与版本回滚。\n了解 FreeRTOS 实时操作系统，可完成多任务创建与调度、队列与信号量同步。'},
+      ]},
+      { id:nid(), type:'projects', title:'项目经历', items:[
+        {id:nid(),time:'2025.03 ~ 2025.09',name:'「小星」桌面陪伴机器人',role:'项目负责人',detail:'基于 ESP32-S3 搭建桌面陪伴机器人，集成 LCD 显示屏与语音交互模块，实现表情动画、语音问答与定时提醒。采用 FreeRTOS 多任务调度管理显示刷新与音频播放，通过 SPI+DMA+双缓冲优化屏幕动画帧率。'},
+        {id:nid(),time:'2025.10 ~ 2026.03',name:'基于 FOC 的双轮自平衡小车',role:'项目负责人',detail:'以 STM32G431 为主控，采用 FOC 磁场定向控制驱动无刷电机，结合六轴 IMU 姿态解算与 PID 串级控制实现自平衡与遥控行驶。独立完成四层 PCB 设计与调试，实现稳定直立与灵活转向。'},
+      ]},
+      { id:nid(), type:'work', title:'工作经历', items:[
+        {id:nid(),time:'2025.06 ~ 2025.08',company:'幻星机器人实验室',position:'嵌入式开发实习生',detail:'参与服务机器人底盘驱动开发，负责电机驱动模块调试与 CAN 总线通信验证，协助完成整机联调与性能测试。',visible:true},
+      ]},
+      { id:nid(), type:'work', title:'实习经历', items:[
+        {id:nid(),time:'2024.07 ~ 2024.09',company:'未来电子科技',position:'硬件助理实习生',detail:'协助工程师完成单片机最小系统板焊接与测试，整理 BOM 清单与原理图，参与老化测试与问题记录。',visible:true},
+      ]},
+      { id:nid(), type:'hobby', title:'兴趣爱好', items:[
+        {id:nid(),content:'热爱机器人竞技与开源硬件，喜欢动手组装与调试各类电子作品；闲暇时观看科幻动漫、制作高达模型，也喜欢用天文望远镜观测星空。相信好奇心是驱动创造力的最好引擎。'},
+      ]},
+    ]
+  };
+}
+function loadStore(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)); }catch(e){ return null; } }
+function saveStore(){ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
+function save(){ const idx = store.list.findIndex(x=>x.id===store.currentId); if(idx>=0) store.list[idx].resume = resume; saveStore(); }
+
+let store = loadStore();
+if(!store || !Array.isArray(store.list) || store.list.length === 0){
+  const r = defaultResume();
+  store = { list: [{ id: nid(), name: '星野未来·简历', resume: r }], currentId: null };
+  store.currentId = store.list[0].id;
+  saveStore();
+}
+let current = store.list.find(x => x.id === store.currentId) || store.list[0];
+store.currentId = current.id;
+let resume = current.resume;
+// 兼容旧字段
+if(!resume.photo) resume.photo = '';
+if(!resume.font) resume.font = 'yahei';
+if(!Array.isArray(resume.modules)) resume.modules = [];
+resume.modules.forEach(m=>{ if(!m.items) m.items = []; });
+// 数据迁移：旧"工作/实习经历"拆成"工作经历"+"实习经历"（内容保留在"工作经历"）
+const workIdx = resume.modules.findIndex(m => m.type === 'work' && m.title === '工作/实习经历');
+if(workIdx >= 0){
+  const oldWork = resume.modules[workIdx];
+  resume.modules.splice(workIdx, 1,
+    Object.assign({}, oldWork, { title:'工作经历' }),
+    { id:nid(), type:'work', title:'实习经历', items:[] }
+  );
+}
+
+/* ===== 工具 ===== */
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function htmlToText(html){
+  if(!html) return '';
+  let t = html;
+  t = t.replace(/<br\s*\/?>/gi,'\n').replace(/<\/div>/gi,'\n').replace(/<\/p>/gi,'\n').replace(/<li[^>]*>/gi,'· ');
+  t = t.replace(/<[^>]+>/g,'');
+  return t;
+}
+function textToHtml(txt){
+  return String(txt||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+/* ===== 渲染编辑器 ===== */
+function renderEditor(){
+  const list = document.getElementById('moduleList');
+  if(!list) return;
+  try{
+    if(!resume || !Array.isArray(resume.modules)){
+      resume = defaultResume(); save();
+    }
+    if(resume.modules.length === 0){
+      resume = defaultResume(); save();
+    }
+    list.innerHTML = resume.modules.map((m, mi)=>{
+      try{
+        return `
+        <div class="module-card" data-i="${mi}" draggable="true"
+             ondragstart="dragStart(event,${mi})" ondragover="dragOver(event)" ondrop="dragDrop(event,${mi})" ondragend="dragEnd()">
+          <div class="module-head" onclick="toggleModule(${mi})">
+            <span class="grip" title="拖拽排序" onclick="event.stopPropagation()">⠿</span>
+            <input class="m-title" value="${esc(m.title||'')}" onclick="event.stopPropagation()" oninput="updModule(${mi},'title',this.value);structureChanged()">
+            <span class="fold" title="收起/展开" onclick="event.stopPropagation();toggleModule(${mi})">▾</span>
+            <button class="del" onclick="event.stopPropagation();delModule(${mi})" title="删除模块">✕</button>
+          </div>
+          <div class="module-body">${renderModuleBody(m, mi)}</div>
+        </div>`;
+      }catch(e){
+        console.error('module render error:', e);
+        return `<div class="module-card"><div class="module-body" style="color:#e5484d">模块渲染出错：${esc(e.message)}</div></div>`;
+      }
+    }).join('');
+  }catch(e){
+    console.error('renderEditor fatal:', e);
+    list.innerHTML = `<div style="padding:20px;color:#e5484d">渲染出错：${esc(e.message)}</div>`;
+  }
+}
+
+function renderModuleBody(m, mi){
+  if(m.type==='basic'){
+    return m.items.map((it, ii)=>`
+      <div class="kv-row">
+        <input class="kv-label" value="${esc(it.label)}" placeholder="标签" oninput="updItem(${mi},${ii},'label',this.value);structureChanged()">
+        <input value="${esc(it.value)}" placeholder="内容" oninput="updItem(${mi},${ii},'value',this.value);structureChanged()">
+        <button class="kv-del" onclick="delItem(${mi},${ii})">✕</button>
+      </div>`).join('') +
+    `<button class="add-entry" onclick="addItem(${mi})">＋ 添加</button>`;
+  }
+  if(m.type==='education'){
+    return m.items.map((it, ii)=>`
+      <div class="entry">
+        <div class="e-head"><span class="e-idx">${ii+1}</span>
+          <button class="e-del" onclick="delItem(${mi},${ii})">✕</button></div>
+        <div class="row3">
+          <div><span class="f-label">入学-毕业年份</span><input value="${esc(it.time)}" placeholder="2024-09 ~ 2028-06" oninput="updItem(${mi},${ii},'time',this.value);structureChanged()"></div>
+          <div><span class="f-label">学校名称</span><input value="${esc(it.school)}" placeholder="济宁学院" oninput="updItem(${mi},${ii},'school',this.value);structureChanged()"></div>
+          <div><span class="f-label">专业</span><input value="${esc(it.major)}" placeholder="电气工程及其自动化" oninput="updItem(${mi},${ii},'major',this.value);structureChanged()"></div>
+        </div>
+        <span class="f-label">主修课程</span><input value="${esc(it.courses)}" placeholder="主修课程：…" oninput="updItem(${mi},${ii},'courses',this.value);structureChanged()">
+        <span class="f-label">在校职务、奖项等</span>
+        ${rte(mi,ii,'detail',it.detail)}
+      </div>`).join('') +
+    `<button class="add-entry" onclick="addItem(${mi})">＋ 添加教育经历</button>`;
+  }
+  if(m.type==='skills' || m.type==='hobby' || m.type==='custom'){
+    const it = m.items[0] || (m.items[0] = MODULE_TYPES[m.type].defItem());
+    return rte(mi, 0, 'content', it.content);
+  }
+  if(m.type==='projects'){
+    return m.items.map((it, ii)=>`
+      <div class="entry">
+        <div class="e-head"><span class="e-idx">${ii+1}</span>
+          <button class="e-del" onclick="delItem(${mi},${ii})">✕</button></div>
+        <div class="row3">
+          <div><span class="f-label">起止时间</span><input value="${esc(it.time)}" placeholder="2025.04 ~ 2025.12" oninput="updItem(${mi},${ii},'time',this.value);structureChanged()"></div>
+          <div><span class="f-label">项目名称</span><input value="${esc(it.name)}" placeholder="项目名称" oninput="updItem(${mi},${ii},'name',this.value);structureChanged()"></div>
+          <div><span class="f-label">担任职责</span><input value="${esc(it.role)}" placeholder="项目负责人" oninput="updItem(${mi},${ii},'role',this.value);structureChanged()"></div>
+        </div>
+        <span class="f-label">项目详情、技术、成果</span>
+        ${rte(mi,ii,'detail',it.detail)}
+      </div>`).join('') +
+    `<button class="add-entry" onclick="addItem(${mi})">＋ 添加项目</button>`;
+  }
+  if(m.type==='work'){
+    return m.items.map((it, ii)=>`
+      <div class="entry">
+        <div class="e-head"><span class="e-idx">${ii+1}</span>
+          <span class="e-switch">${it.visible?'显示':'隐藏'}<span class="switch ${it.visible?'on':''}" onclick="toggleWork(${mi},${ii})"></span></span>
+          <button class="e-del" onclick="delItem(${mi},${ii})">✕</button></div>
+        <div class="row3">
+          <div><span class="f-label">入职-离职时间</span><input value="${esc(it.time)}" placeholder="2024.07 ~ 至今" oninput="updItem(${mi},${ii},'time',this.value);structureChanged()"></div>
+          <div><span class="f-label">公司名称</span><input value="${esc(it.company)}" placeholder="公司名称" oninput="updItem(${mi},${ii},'company',this.value);structureChanged()"></div>
+          <div><span class="f-label">担任职位</span><input value="${esc(it.position)}" placeholder="职位" oninput="updItem(${mi},${ii},'position',this.value);structureChanged()"></div>
+        </div>
+        <span class="f-label">工作内容、成果</span>
+        ${rte(mi,ii,'detail',it.detail)}
+      </div>`).join('') +
+    `<button class="add-entry" onclick="addItem(${mi})">＋ 添加经历</button>`;
+  }
+  return '';
+}
+
+/* 富文本编辑器（含加粗 + 字号工具栏） */
+function rte(mi, ii, field, val){
+  const html = String(val||'');
+  return `
+  <div class="rte">
+    <div class="rte-toolbar">
+      <button class="b" onmousedown="event.preventDefault()" onclick="rteBold()" title="加粗">B</button>
+      <select onmousedown="saveSel()" onchange="rteSize(this.value,this)">
+        <option value="">字号</option>
+        <option value="12">12</option><option value="13">13</option><option value="14">14</option>
+        <option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="24">24</option>
+      </select>
+    </div>
+    <div class="rte-body" contenteditable="true" spellcheck="false"
+         data-mi="${mi}" data-ii="${ii}" data-field="${field}"
+         oninput="rteInput(this)">${html}</div>
+  </div>`;
+}
+
+/* 富文本：保存选区 + 应用格式 */
+let savedRange = null;
+function findRteBody(node){
+  while(node && node !== document){
+    if(node.classList && node.classList.contains('rte-body')) return node;
+    node = node.parentNode;
+  }
+  return null;
+}
+function saveSel(){
+  const sel = window.getSelection();
+  if(sel && sel.rangeCount>0 && !sel.isCollapsed){
+    savedRange = sel.getRangeAt(0).cloneRange();
+  }
+}
+function rteBold(){
+  const sel = window.getSelection();
+  if(!sel || sel.rangeCount===0 || sel.isCollapsed) return;
+  const body = findRteBody(sel.anchorNode);
+  document.execCommand('styleWithCSS', false, true);
+  document.execCommand('bold', false, null);
+  if(body) rteInput(body);
+}
+function rteSize(val, select){
+  if(!val || !savedRange){ select.value=''; return; }
+  const body = findRteBody(savedRange.startContainer);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(savedRange);
+  document.execCommand('styleWithCSS', false, true);
+  try{
+    const span = document.createElement('span');
+    span.style.fontSize = val + 'px';
+    savedRange.surroundContents(span);
+  }catch(e){ document.execCommand('fontSize', false, sizeToFont(val)); }
+  if(body) rteInput(body);
+  select.value='';
+}
+function sizeToFont(px){
+  px=parseInt(px);
+  if(px<=12) return '2'; if(px<=14) return '3'; if(px<=18) return '4'; if(px<=24) return '5'; if(px<=32) return '6'; return '7';
+}
+function rteInput(body){
+  const mi = body.dataset.mi, ii = body.dataset.ii, field = body.dataset.field;
+  resume.modules[mi].items[ii][field] = body.innerHTML;
+  save(); structureChanged();
+}
+
+/* ===== 数据操作 ===== */
+function updModule(mi, field, val){ resume.modules[mi][field] = val; save(); }
+function updItem(mi, ii, field, val){ resume.modules[mi].items[ii][field] = val; save(); }
+function addItem(mi){
+  const m = resume.modules[mi];
+  m.items.push(MODULE_TYPES[m.type].defItem());
+  save(); renderEditor(); structureChanged();
+}
+function delItem(mi, ii){ resume.modules[mi].items.splice(ii,1); save(); renderEditor(); structureChanged(); }
+function toggleWork(mi, ii){ const it = resume.modules[mi].items[ii]; it.visible = !it.visible; save(); renderEditor(); structureChanged(); }
+function addModule(){
+  const title = prompt('请输入模块标题（如：自我评价、竞赛经历）：');
+  if(!title || !title.trim()) return;
+  resume.modules.push({ id:nid(), type:'custom', title:title.trim(), items:[{id:nid(),content:''}] });
+  save(); renderEditor(); structureChanged();
+}
+function delModule(mi){
+  if(!confirm(`确定删除「${resume.modules[mi].title}」模块吗？`)) return;
+  resume.modules.splice(mi,1);
+  save(); renderEditor(); structureChanged();
+}
+
+/* 收起/展开模块 */
+function toggleModule(mi){
+  const card = document.querySelector('.module-card[data-i="' + mi + '"]');
+  if(!card) return;
+  const body = card.querySelector('.module-body');
+  const fold = card.querySelector('.fold');
+  if(!body) return;
+  const collapsed = body.style.display === 'none';
+  body.style.display = collapsed ? '' : 'none';
+  if(fold) fold.textContent = collapsed ? '▾' : '▸';
+}
+
+/* 新建 / 保存 */
+function emptyResume(){
+  return {
+    name:'未命名简历', font:'yahei', photo:'',
+    modules:[
+      { id:nid(), type:'basic', title:'基本信息', items:[
+        {id:nid(),label:'姓名',value:''},{id:nid(),label:'电话',value:''},
+        {id:nid(),label:'邮箱',value:''},{id:nid(),label:'求职意向',value:''},
+      ]},
+      { id:nid(), type:'education', title:'教育背景', items:[] },
+      { id:nid(), type:'skills', title:'专业技能', items:[{id:nid(),content:''}] },
+      { id:nid(), type:'projects', title:'项目经历', items:[] },
+      { id:nid(), type:'work', title:'工作经历', items:[] },
+      { id:nid(), type:'work', title:'实习经历', items:[] },
+      { id:nid(), type:'hobby', title:'兴趣爱好', items:[{id:nid(),content:''}] },
+    ]
+  };
+}
+function newResume(){
+  const r = emptyResume();
+  const id = nid();
+  const name = '简历 ' + (store.list.length + 1);
+  store.list.push({ id, name, resume: r });
+  store.currentId = id;
+  resume = r;
+  save(); renderEditor(); structureChanged();
+  const menu = document.getElementById('resumeMenu');
+  if(menu) menu.classList.add('open');
+  startRename(id);
+}
+function saveResume(){
+  const idx = store.list.findIndex(x => x.id === store.currentId);
+  if(idx >= 0) store.list[idx].resume = resume;
+  saveStore();
+  toast('已保存到本地');
+}
+function switchResume(id){
+  const item = store.list.find(x => x.id === id);
+  if(!item) return;
+  store.currentId = id;
+  resume = item.resume;
+  if(!resume.photo) resume.photo = '';
+  if(!Array.isArray(resume.modules)) resume.modules = [];
+  saveStore();
+  renderEditor(); renderPreview(); renderResumeList();
+  toast('已切换到「' + item.name + '」');
+}
+function deleteResume(id){
+  if(store.list.length <= 1){ toast('至少保留一份简历'); return; }
+  const item = store.list.find(x => x.id === id);
+  if(!confirm('确定删除「' + item.name + '」吗？')) return;
+  store.list = store.list.filter(x => x.id !== id);
+  if(store.currentId === id){
+    store.currentId = store.list[0].id;
+    resume = store.list[0].resume;
+  }
+  saveStore();
+  renderEditor(); renderPreview(); renderResumeList();
+}
+function renderResumeList(){
+  const menu = document.getElementById('resumeMenu');
+  if(!menu) return;
+  menu.innerHTML = store.list.map(x => `
+    <div class="r-item ${x.id===store.currentId?'active':''}" onclick="switchResume('${x.id}')">
+      <span class="r-name">📄 ${esc(x.name)}</span>
+      <span class="r-edit" onclick="event.stopPropagation();startRename('${x.id}')" title="重命名">✎</span>
+      <span class="r-del" onclick="event.stopPropagation();deleteResume('${x.id}')" title="删除">✕</span>
+    </div>`).join('') + `<div class="r-divider"></div>
+    <div class="r-item" onclick="newResume()" style="color:var(--blue)">＋ 新建简历</div>`;
+}
+let renaming = false;
+function startRename(id){
+  const menu = document.getElementById('resumeMenu');
+  if(!menu) return;
+  menu.innerHTML = store.list.map(x => {
+    if(x.id === id){
+      return `<div class="r-item active">
+        <span>📄 </span>
+        <input class="r-rename-input" value="${esc(x.name)}" data-id="${x.id}"
+          onkeydown="if(event.key==='Enter'){this.blur()}else if(event.key==='Escape'){this.dataset.cancel='1';this.blur()}"
+          onblur="commitRename(this)" onclick="event.stopPropagation()">
+      </div>`;
+    }
+    return `<div class="r-item ${x.id===store.currentId?'active':''}" onclick="switchResume('${x.id}')">
+      <span class="r-name">📄 ${esc(x.name)}</span>
+      <span class="r-edit" onclick="event.stopPropagation();startRename('${x.id}')" title="重命名">✎</span>
+      <span class="r-del" onclick="event.stopPropagation();deleteResume('${x.id}')" title="删除">✕</span>
+    </div>`;
+  }).join('') + `<div class="r-divider"></div>
+    <div class="r-item" onclick="newResume()" style="color:var(--blue)">＋ 新建简历</div>`;
+  const inp = menu.querySelector('.r-rename-input');
+  if(inp){ inp.focus(); inp.select(); }
+}
+function commitRename(inp){
+  if(renaming || !inp) return;
+  renaming = true;
+  const id = inp.dataset.id;
+  const name = (inp.value || '').trim();
+  if(name && inp.dataset.cancel !== '1'){
+    const item = store.list.find(x => x.id === id);
+    if(item && item.name !== name){ item.name = name; saveStore(); toast('已重命名「' + name + '」'); }
+  }
+  renderResumeList();
+  setTimeout(()=>{ renaming = false; }, 0);
+}
+function toggleResumeMenu(){
+  const menu = document.getElementById('resumeMenu');
+  menu.classList.toggle('open');
+  renderResumeList();
+}
+let toastTimer = null;
+function toast(msg){
+  const el = document.getElementById('toast');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ el.style.display = 'none'; }, 1500);
+}
+
+/* 拖拽排序 */
+let dragFrom = null;
+function dragStart(e, i){ dragFrom = i; e.target.closest('.module-card').classList.add('dragging'); }
+function dragOver(e){ e.preventDefault(); }
+function dragEnd(){ document.querySelectorAll('.module-card').forEach(c=>c.classList.remove('dragging')); }
+function dragDrop(e, to){
+  e.preventDefault();
+  if(dragFrom===null || dragFrom===to) return;
+  const arr = resume.modules;
+  const [m] = arr.splice(dragFrom,1);
+  arr.splice(to,0,m);
+  dragFrom = null;
+  save(); renderEditor(); structureChanged();
+}
+
+/* ===== 渲染预览 ===== */
+function renderPreview(){
+  const paper = document.getElementById('paper');
+  if(resume.paperHTML){
+    paper.innerHTML = resume.paperHTML;
+  }else{
+    let html = `<div class="p-title">个人简历</div>`;
+    for(const m of resume.modules){
+      const body = renderModulePreview(m);
+      if(body.trim()==='') continue;
+      html += `<div class="p-module"><div class="p-module-title">${esc(m.title)}</div><div class="p-body">${body}</div></div>`;
+    }
+    resume.paperHTML = html;
+    paper.innerHTML = html;
+  }
+  applyFont();
+  updatePageBreaks();
+}
+
+/* 左侧结构化编辑后重置预览（清 paperHTML 重新生成） */
+function structureChanged(){
+  resume.paperHTML = null;
+  renderPreview();
+}
+
+/* 预览区绘制 A4 分页虚线 */
+function updatePageBreaks(){
+  const paper = document.getElementById('paper');
+  const overlay = document.getElementById('pageBreakOverlay');
+  if(!paper || !overlay) return;
+  const wrap = document.querySelector('.paper-wrap');
+  const zoom = parseFloat(wrap.style.zoom) || 1;
+  const inv = 1 / zoom;                              // 把缩放后的坐标换算回未缩放坐标
+  const breaks = collectBreakPts(paper, inv);        // 未缩放 CSS px
+  const paperH = paper.getBoundingClientRect().height * inv;
+  const pageLenPx = PB_PAGE_PT * 4 / 3;              // 每页简历纸 CSS px 高
+  const cuts = computePageCuts(breaks, paperH, pageLenPx);
+  overlay.innerHTML = cuts.map(c => `<div class="pb-line" style="top:${Math.round(c)}px"></div>`).join('');
+}
+
+/* 全局格式工具栏：选中预览文字 → 加粗/字号 */
+let fmtRange = null;
+function findPaper(node){
+  const paper = document.getElementById('paper');
+  while(node && node !== document){
+    if(node === paper) return paper;
+    node = node.parentNode;
+  }
+  return null;
+}
+function saveFmtSel(){
+  const sel = window.getSelection();
+  if(sel && sel.rangeCount>0 && !sel.isCollapsed){
+    fmtRange = sel.getRangeAt(0).cloneRange();
+  }
+}
+function fmtBold(){
+  const sel = window.getSelection();
+  if(!sel || sel.rangeCount===0 || sel.isCollapsed) return;
+  if(!findPaper(sel.anchorNode)) return;
+  document.execCommand('styleWithCSS', false, true);
+  document.execCommand('bold', false, null);
+  savePaperHTML();
+}
+function fmtSize(val, select){
+  if(!val || !fmtRange){ select.value=''; return; }
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(fmtRange);
+  document.execCommand('styleWithCSS', false, true);
+  let anc = fmtRange.commonAncestorContainer;
+  if(anc.nodeType === 3) anc = anc.parentElement;
+  if(anc && anc.tagName === 'SPAN' && anc.style && anc.style.fontSize){
+    // 已在字号 span 内，直接改字号（可反复调整）
+    anc.style.fontSize = val + 'px';
+  }else{
+    try{
+      const span = document.createElement('span');
+      span.style.fontSize = val + 'px';
+      fmtRange.surroundContents(span);
+    }catch(e){ document.execCommand('fontSize', false, sizeToFont2(val)); }
+  }
+  savePaperHTML();
+  select.value='';
+}
+function sizeToFont2(px){
+  px=parseInt(px);
+  if(px<=12) return '2'; if(px<=14) return '3'; if(px<=18) return '4'; if(px<=24) return '5'; if(px<=32) return '6'; return '7';
+}
+function fmtIndent(){
+  const paper = document.getElementById('paper');
+  if(!fmtRange) return;
+  let node = fmtRange.commonAncestorContainer;
+  if(node.nodeType === 3) node = node.parentElement;
+  // 向上找最近的块级 DIV（段落容器）
+  let block = node;
+  while(block && block !== paper && block.tagName !== 'DIV'){
+    block = block.parentElement;
+  }
+  if(!block || block === paper || block.tagName !== 'DIV') return;
+  const cur = block.style.textIndent;
+  if(cur && cur !== '0px' && cur !== '0em' && cur !== '0pt'){
+    block.style.textIndent = '';
+    toast('已取消首行缩进');
+  }else{
+    block.style.textIndent = '2em';
+    toast('已首行缩进 2 字符');
+  }
+  savePaperHTML();
+}
+function savePaperHTML(){
+  resume.paperHTML = document.getElementById('paper').innerHTML;
+  save();
+}
+
+document.addEventListener('selectionchange', function(){
+  const bar = document.getElementById('fmtBar');
+  const sel = window.getSelection();
+  if(!sel || sel.isCollapsed || sel.rangeCount===0){
+    bar.classList.remove('show'); return;
+  }
+  if(!findPaper(sel.anchorNode)){
+    bar.classList.remove('show'); return;
+  }
+  const rect = sel.getRangeAt(0).getBoundingClientRect();
+  if(rect.width===0 && rect.height===0){ bar.classList.remove('show'); return; }
+  fmtRange = sel.getRangeAt(0).cloneRange();
+  const bw = bar.offsetWidth || 120;
+  let top = rect.top - 40;
+  if(top < 60) top = rect.bottom + 8;
+  let left = rect.left + rect.width/2 - bw/2;
+  left = Math.max(8, Math.min(left, window.innerWidth - bw - 8));
+  bar.style.top = top + 'px';
+  bar.style.left = left + 'px';
+  bar.classList.add('show');
+});
+document.getElementById('fmtBar').addEventListener('mousedown', function(e){ if(e.target.tagName !== 'SELECT') e.preventDefault(); });
+document.getElementById('paper').addEventListener('input', function(){ savePaperHTML(); updatePageBreaks(); });
+
+function renderModulePreview(m){
+  if(m.type==='basic'){
+    const rows = m.items.filter(it=>it.label||it.value).map(it=>
+      `<div class="p-kv">${esc(it.label)}：${esc(it.value)}</div>`).join('');
+    const photo = resume.photo ? `<div class="p-photo"><img src="${resume.photo}" alt=""></div>` : `<div class="p-photo">证件照</div>`;
+    return `<div class="p-basic-wrap"><div class="p-basic">${rows}</div>${photo}</div>`;
+  }
+  if(m.type==='education'){
+    return m.items.map(it=>{
+      let h = `<div class="p-item"><div class="p-edu-line"><span class="time">${esc(it.time)}</span><span class="t">${esc(it.school)}</span><span class="m">${esc(it.major)}</span></div>`;
+      if(it.courses) h += `<div class="p-courses">主修课程：${esc(it.courses)}</div>`;
+      if(it.detail) h += `<div class="p-detail">${it.detail}</div>`;
+      return h + `</div>`;
+    }).join('');
+  }
+  if(m.type==='skills'){
+    const it = m.items[0];
+    if(!it || !it.content) return '';
+    return `<div class="p-detail">${it.content}</div>`;
+  }
+  if(m.type==='hobby' || m.type==='custom'){
+    const it = m.items[0];
+    if(!it || !it.content) return '';
+    return `<div class="p-detail">${it.content}</div>`;
+  }
+  if(m.type==='projects'){
+    return m.items.map(it=>{
+      let h = `<div class="p-item"><div class="p-proj-line"><span class="time">${esc(it.time)}</span><span class="t">${esc(it.name)}</span><span class="r">${esc(it.role)}</span></div>`;
+      if(it.detail) h += `<div class="p-detail">${it.detail}</div>`;
+      return h + `</div>`;
+    }).join('');
+  }
+  if(m.type==='work'){
+    return m.items.filter(it=>it.visible).map(it=>{
+      let h = `<div class="p-item"><div class="p-line1"><span class="t">${esc(it.company)}</span><span class="r">${esc(it.position)}</span></div><div class="time">${esc(it.time)}</div>`;
+      if(it.detail) h += `<div class="p-detail">${it.detail}</div>`;
+      return h + `</div>`;
+    }).join('');
+  }
+  return '';
+}
+
+/* ===== 导出 ===== */
+function exportTxt(){
+  let txt = '个人简历\n\n';
+  for(const m of resume.modules){
+    const body = moduleToText(m);
+    if(!body.trim()) continue;
+    txt += `【${m.title}】\n` + body + '\n\n';
+  }
+  download(txt, '简历.txt', 'text/plain');
+}
+function moduleToText(m){
+  if(m.type==='basic') return m.items.filter(it=>it.label||it.value).map(it=>`${it.label}：${it.value}`).join('\n');
+  if(m.type==='education') return m.items.map(it=>{
+    let t = `${it.time}  ${it.school}` + (it.major ? `  ${it.major}` : '');
+    if(it.courses) t += `\n主修课程：${it.courses}`;
+    if(it.detail) t += `\n${htmlToText(it.detail)}`;
+    return t;
+  }).join('\n\n');
+  if(m.type==='skills'||m.type==='hobby'||m.type==='custom') return htmlToText(m.items[0]?.content);
+  if(m.type==='projects') return m.items.map(it=>{
+    let t = `${it.time}  ${it.name}（${it.role}）`;
+    if(it.detail) t += `\n${htmlToText(it.detail)}`;
+    return t;
+  }).join('\n\n');
+  if(m.type==='work') return m.items.filter(it=>it.visible).map(it=>{
+    let t = `${it.time}  ${it.company}（${it.position}）`;
+    if(it.detail) t += `\n${htmlToText(it.detail)}`;
+    return t;
+  }).join('\n\n');
+  return '';
+}
+function download(content, filename, type){
+  const blob = new Blob(['\ufeff'+content], {type:type+';charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function exportPDF(){
+  // 优先：html2canvas + jsPDF 精确整页导出（所见即所得，不经过打印对话框）
+  if(window.html2canvas && (window.jspdf || window.jsPDF)){
+    canvasToPDF();
+    return;
+  }
+  loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+    ()=>loadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+      ()=>canvasToPDF(),
+      ()=>{ toast('PDF 组件加载失败，改用系统打印'); window.print(); }),
+    ()=>{ toast('PDF 组件加载失败，改用系统打印'); window.print(); });
+}
+function loadScript(src, ok, fail){
+  const s = document.createElement('script');
+  s.src = src; s.onload = ok; s.onerror = fail;
+  document.head.appendChild(s);
+}
+function canvasToPDF(){
+  const paper = document.getElementById('paper');
+  const wrap = document.querySelector('.paper-wrap');
+  const prevZoom = wrap.style.zoom;
+  wrap.style.zoom = '1';
+  const finish = (errMsg)=>{
+    wrap.style.zoom = prevZoom;
+    if(errMsg){ toast(errMsg); window.print(); }
+  };
+  try{
+    html2canvas(paper, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false }).then(canvas => {
+      wrap.style.zoom = prevZoom;
+      const wPt = 615;
+      const hPt = Math.max(Math.ceil(canvas.height / canvas.width * wPt), wPt);
+      const JsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+      const pdf = new JsPDF({ orientation: 'portrait', unit: 'pt', format: [wPt, hPt] });
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, wPt, hPt);
+      const name = (store.list.find(x=>x.id===store.currentId) || {}).name || '简历';
+      savePDFBlob(pdf.output('blob'), name);
+    }).catch(()=>finish('图片渲染失败，改用系统打印'));
+  }catch(e){
+    finish('导出失败，改用系统打印');
+  }
+}
+// ===== 分页参数（A4 + 标准页边距） =====
+const PB_MARGIN = 50;                          // 页边距 pt（约 1.76cm）
+const PB_PAGE_W = 595, PB_PAGE_H = 842;        // A4 尺寸 pt
+const PB_CONTENT_W = PB_PAGE_W - PB_MARGIN*2;  // 内容区宽
+const PB_CONTENT_H = PB_PAGE_H - PB_MARGIN*2;  // 内容区高
+const PB_RATIO = PB_CONTENT_W / 615;           // 简历纸(615pt)缩放比
+const PB_PAGE_PT = PB_CONTENT_H / PB_RATIO;    // 每页可容纳的简历纸高度(pt)
+
+// 收集分页边界：段落块 + 文本每行（行级，避免切到文字行）+ 标题（用于孤行控制）
+function collectBreakPts(paper, scale){
+  const paperTop = paper.getBoundingClientRect().top;
+  const pts = new Set();
+  const titleBounds = [];
+  const add = (r)=>{ pts.add(Math.round((r.top - paperTop) * scale)); pts.add(Math.round((r.bottom - paperTop) * scale)); };
+  // 模块标题（记录边界用于孤行控制）
+  paper.querySelectorAll('.p-module-title').forEach(el => {
+    const r = el.getBoundingClientRect();
+    const top = Math.round((r.top - paperTop) * scale);
+    const bottom = Math.round((r.bottom - paperTop) * scale);
+    pts.add(top); pts.add(bottom);
+    titleBounds.push({ top, bottom });
+  });
+  // 段落块
+  paper.querySelectorAll('.p-detail, .p-courses, .p-kv, .p-edu-line, .p-proj-line, .p-line1, .p-basic-wrap, .p-photo').forEach(el => add(el.getBoundingClientRect()));
+  // 文本每行边界（保证切点在行与行之间，不切字）
+  const range = document.createRange();
+  const walker = document.createTreeWalker(paper, NodeFilter.SHOW_TEXT);
+  let node;
+  while((node = walker.nextNode())){
+    if(!node.textContent.trim()) continue;
+    range.selectNodeContents(node);
+    const rects = range.getClientRects();
+    for(const r of rects){
+      if(r.height < 1) continue;
+      pts.add(Math.round((r.top - paperTop) * scale));
+      pts.add(Math.round((r.bottom - paperTop) * scale));
+    }
+  }
+  return { points: [...pts].sort((a,b)=>a-b), titleBounds };
+}
+// 行级贪心分页：切点落在行边界，尽量填满；标题不孤立页底（孤行控制）
+function computePageCuts(data, totalLen, pageLen){
+  const { points, titleBounds } = data;
+  const cuts = [];
+  let start = 0;
+  while(start < totalLen - 1){
+    let target = start + pageLen;
+    if(target >= totalLen) break;
+    let best = -1;
+    for(const b of points){
+      if(b <= start + 2) continue;
+      if(b > target) break;
+      best = b;
+    }
+    let cut = (best > start + 2) ? best : target;
+    // 孤行控制：切点若是标题底部（标题会孤立页底），改切到该标题顶部
+    const tb = titleBounds.find(t => Math.abs(t.bottom - cut) <= 1);
+    if(tb && tb.top > start + 2){
+      cut = tb.top;
+    }
+    cuts.push(cut);
+    start = cut;
+  }
+  return cuts;
+}
+
+function exportPDFPages(){
+  if(window.html2canvas && (window.jspdf || window.jsPDF)){
+    canvasToPDFPages();
+    return;
+  }
+  loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+    ()=>loadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+      ()=>canvasToPDFPages(),
+      ()=>{ toast('PDF 组件加载失败，改用系统打印'); window.print(); }),
+    ()=>{ toast('PDF 组件加载失败，改用系统打印'); window.print(); });
+}
+function canvasToPDFPages(){
+  const paper = document.getElementById('paper');
+  const wrap = document.querySelector('.paper-wrap');
+  const prevZoom = wrap.style.zoom;
+  wrap.style.zoom = '1';
+  const finish = (msg)=>{ wrap.style.zoom = prevZoom; if(msg){ toast(msg); window.print(); } };
+  try{
+    html2canvas(paper, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false }).then(canvas => {
+      const breaks = collectBreakPts(paper, 2); // canvas px（zoom 仍为 1）
+      wrap.style.zoom = prevZoom;
+      const JsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+      const CW = canvas.width, CH = canvas.height;
+      const slicePx = Math.floor(PB_CONTENT_H * CW / PB_CONTENT_W); // 每页可容纳像素高
+      const cuts = computePageCuts(breaks, CH, slicePx);
+
+      const ranges = [];
+      let s = 0;
+      cuts.forEach(c => { ranges.push([s, c]); s = c; });
+      ranges.push([s, CH]);
+
+      const pdf = new JsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+      ranges.forEach((rg, i) => {
+        if(i>0) pdf.addPage();
+        const sh = rg[1] - rg[0];
+        const c = document.createElement('canvas');
+        c.width = CW; c.height = sh;
+        c.getContext('2d').drawImage(canvas, 0, rg[0], CW, sh, 0, 0, CW, sh);
+        const imgH = sh * PB_CONTENT_W / CW; // 该切片在内容区的高度
+        pdf.addImage(c.toDataURL('image/jpeg', 0.95), 'JPEG', PB_MARGIN, PB_MARGIN, PB_CONTENT_W, imgH);
+      });
+      const name = (store.list.find(x=>x.id===store.currentId) || {}).name || '简历';
+      savePDFBlob(pdf.output('blob'), name);
+    }).catch(()=>finish('渲染失败，改用系统打印'));
+  }catch(e){ finish('导出失败，改用系统打印'); }
+}
+async function savePDFBlob(blob, name){
+  // 优先：系统「另存为」对话框，自选保存位置和文件名
+  if(window.showSaveFilePicker){
+    try{
+      const handle = await window.showSaveFilePicker({
+        suggestedName: name + '.pdf',
+        types: [{ description: 'PDF 文档', accept: { 'application/pdf': ['.pdf'] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      toast('已保存到所选位置');
+      return;
+    }catch(e){
+      if(e && e.name === 'AbortError'){ return; } // 用户取消
+      // 其他错误（如 iframe 权限受限）→ 回退普通下载
+    }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name + '.pdf';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  toast('已导出 PDF');
+}
+
+/* 移动端 */
+function mobileTab(which){
+  document.getElementById('editor').classList.toggle('show',which==='edit');
+  document.getElementById('tabEdit').classList.toggle('active',which==='edit');
+  document.getElementById('tabPreview').classList.toggle('active',which==='preview');
+}
+
+/* 证件照上传 */
+document.getElementById('photoInput').addEventListener('change', function(e){
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = function(){ resume.photo = r.result; save(); structureChanged(); };
+  r.readAsDataURL(f); e.target.value='';
+});
+
+/* 打印 */
+function fitPreview(){
+  const preview = document.getElementById('preview');
+  const wrap = document.querySelector('.paper-wrap');
+  const scale = Math.min(1, (preview.clientWidth - 70) / 820);
+  wrap.style.zoom = scale;
+}
+window.addEventListener('resize', fitPreview);
+
+renderEditor();
+renderPreview();
+renderResumeList();
+fitPreview();
+</script>
+</body>
+</html>
